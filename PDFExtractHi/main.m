@@ -15,6 +15,7 @@ bool extractOnlyUnderline = false;
 bool addSeparator = false;
 bool doubleSpaced = false;
 bool comment = false;
+bool showPage = false;
 int pageStart = -1;
 int pageEnd = -1;
 
@@ -178,7 +179,7 @@ void extractPage(PDFPage *page) {
                 if (fAnnot != fComment) {
                     fComment = fAnnot;
                     if (fComment.contents.length > 0) {
-                        printf("\n<br><br><b>%s</b><br><br>\n", [fComment.contents UTF8String]);
+                        printf("\n<p style='padding:8px; background-color:#f0f0f0'>%s</p>\n", [fComment.contents UTF8String]);
                     }
                 }
             }
@@ -317,8 +318,8 @@ void extract(NSString *path) {
         return;
     }
     
-    if (!extractOnlyUnderline && !addSeparator)
-        checkUnderLine(pdfDoc);
+//    if (!extractOnlyUnderline && !addSeparator)
+//        checkUnderLine(pdfDoc);
     
     long pc = pdfDoc.pageCount;
     for(int i=0;i<pc;i++) {
@@ -327,21 +328,44 @@ void extract(NSString *path) {
         if (pageEnd != -1 && i+1 > pageEnd)
             break;
         PDFPage *page = [pdfDoc pageAtIndex:i];
+        
+        if (showPage) {
+            printf("<h2>Page %d</h2>", i+1);
+        }
+
         extractPage(page);
     }
     
     printf("\n");
     
 }
+
+void showHelp()
+{
+    printf("PDFExtractHi [options] filename\n");
+    printf("\noptions:\n");
+    printf("  -underline\textract only underlined highlights\n");
+    printf("  -comment\tprint out highlight comment\n");
+    printf("  -page\t\tdisplay page number\n");
+    printf("  -start\tspecify starting page\n");
+    printf("  -end\t\tspecify ending page\n");
+    printf("\n");
+}
+
 int main(int argc, const char * argv[]) {
     @autoreleasepool {
 
-        if (argc > -1) {
+        if (argc > 1) {
             
             if (argc > 2) {
                 for(int i=1;i<argc-1;i++) {
                     NSString *arg = [NSString stringWithFormat:@"%s", argv[i]];
                     //NSLog(@"<<%@>>", arg);
+                    
+                    if ([arg containsString:@"-help"]) {
+                        showHelp();
+                        return 0;
+                    }
                     
                     if ([arg containsString:@"-underline"]) {
                         extractOnlyUnderline = true;
@@ -358,6 +382,11 @@ int main(int argc, const char * argv[]) {
                     if ([arg containsString:@"-comment"]) {
                         comment = true;
                     }
+                    
+                    if ([arg containsString:@"-page"]) {
+                        showPage = true;
+                    }
+                    
                     if ([arg containsString:@"-start"]) {
                         i++;
                         arg = [NSString stringWithFormat:@"%s", argv[i]];
@@ -377,9 +406,6 @@ int main(int argc, const char * argv[]) {
                         
                     }
                 }
-            } else {
-                printf("help\n");
-                exit;
             }
             
             
@@ -393,6 +419,8 @@ int main(int argc, const char * argv[]) {
             extract(path);
             printf("\n<br><br>\n");
             
+        } else {
+            showHelp();
         }
         
     }
